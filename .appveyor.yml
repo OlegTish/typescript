@@ -1,0 +1,8 @@
+version: 1.0.{build}
+image: node
+environment:
+  nodejs_version: '16'
+install:
+  - npm install
+test_script:
+  - npm test
