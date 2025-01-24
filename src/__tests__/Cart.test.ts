@@ -1,84 +1,52 @@
-import { Cart } from '../Cart';
-import { Movie } from '../Movie';
+import { Cart, CartItem } from '../Cart';
 
 describe('Cart', () => {
   let cart: Cart;
-  let movie1: Movie;
-  let movie2: Movie;
 
   beforeEach(() => {
     cart = new Cart();
-    movie1 = new Movie('Мстители', 2012, 'США', 'Avengers Assemble!', ['фантастика', 'боевик'], 137);
-    movie2 = new Movie('Железный человек', 2008, 'США', 'I am Iron Man!', ['фантастика'], 126);
   });
 
-  it('should add movies to the cart', () => {
-    const consoleSpy = jest.spyOn(console, 'log').mockImplementation(() => {});
-    cart.addToCart(movie1, 500);
-    cart.addToCart(movie2, 700);
-
-    expect(cart.items.length).toBe(2);
-    expect(cart.items[0].movie).toEqual(movie1);
-    expect(cart.items[1].movie).toEqual(movie2);
-    expect(consoleSpy).toHaveBeenCalledWith('Добавлено в корзину: Мстители');
-    expect(consoleSpy).toHaveBeenCalledWith('Добавлено в корзину: Железный человек');
-
-    consoleSpy.mockRestore();
+  test('should add items to the cart', () => {
+    const item: CartItem = { id: 1, title: 'Movie A', price: 10 };
+    cart.addToCart(item);
+    expect(cart.getItems()).toContainEqual(item);
   });
 
-  it('should remove a movie from the cart by id', () => {
-    const consoleSpy = jest.spyOn(console, 'log').mockImplementation(() => {});
-    cart.addToCart(movie1, 500);
-    cart.addToCart(movie2, 700);
-
-    cart.removeFromCart(0);
-    expect(cart.items.length).toBe(1);
-    expect(cart.items[0].movie).toEqual(movie2);
-    expect(consoleSpy).toHaveBeenCalledWith('Элемент с id 0 удалён из корзины.');
-
+  test('should remove items from the cart by id', () => {
+    const item: CartItem = { id: 1, title: 'Movie A', price: 10 };
+    cart.addToCart(item);
     cart.removeFromCart(1);
-    expect(cart.items.length).toBe(0);
-    expect(consoleSpy).toHaveBeenCalledWith('Элемент с id 1 удалён из корзины.');
-
-    consoleSpy.mockRestore();
+    expect(cart.getItems()).not.toContainEqual(item);
   });
 
-  it('should calculate the total cost without discount', () => {
-    cart.addToCart(movie1, 500);
-    cart.addToCart(movie2, 700);
-
-    const total = cart.calculateTotal();
-    expect(total).toBe(1200);
+  test('should throw an error when removing non-existent item', () => {
+    expect(() => cart.removeFromCart(999)).toThrow('Item with id 999 not found');
   });
 
-  it('should calculate the total cost with discount', () => {
-    cart.addToCart(movie1, 500);
-    cart.addToCart(movie2, 700);
-
-    const totalWithDiscount = cart.calculateTotalWithDiscount(20); // 20% скидка
-    expect(totalWithDiscount).toBe(960);
+  test('should calculate total cost of items', () => {
+    cart.addToCart({ id: 1, title: 'Movie A', price: 10 });
+    cart.addToCart({ id: 2, title: 'Movie B', price: 20 });
+    expect(cart.getTotalCost()).toBe(30);
   });
 
-  it('should throw an error for invalid discount values', () => {
-    cart.addToCart(movie1, 500);
-    cart.addToCart(movie2, 700);
-
-    expect(() => cart.calculateTotalWithDiscount(-10)).toThrow('Скидка должна быть в диапазоне от 0 до 100.');
-    expect(() => cart.calculateTotalWithDiscount(110)).toThrow('Скидка должна быть в диапазоне от 0 до 100.');
+  test('should calculate total cost with discount', () => {
+    cart.addToCart({ id: 1, title: 'Movie A', price: 100 });
+    expect(cart.getTotalCostWithDiscount(10)).toBe(90);
   });
 
-  it('should display the cart content', () => {
-    cart.addToCart(movie1, 500);
-    cart.addToCart(movie2, 700);
+  test('should throw an error for invalid discount values', () => {
+    cart.addToCart({ id: 1, title: 'Movie A', price: 100 });
+    expect(() => cart.getTotalCostWithDiscount(-5)).toThrow(
+      'Discount must be between 0 and 100'
+    );
+    expect(() => cart.getTotalCostWithDiscount(105)).toThrow(
+      'Discount must be between 0 and 100'
+    );
+  });
 
-    const consoleSpy = jest.spyOn(console, 'log').mockImplementation(() => {});
-
-    cart.displayCart();
-
-    expect(consoleSpy).toHaveBeenCalledWith('Содержимое корзины:');
-    expect(consoleSpy).toHaveBeenCalledWith('0. Мстители (2012) - 500₽');
-    expect(consoleSpy).toHaveBeenCalledWith('1. Железный человек (2008) - 700₽');
-
-    consoleSpy.mockRestore();
+  test('should handle empty cart correctly', () => {
+    expect(cart.getTotalCost()).toBe(0);
+    expect(cart.getTotalCostWithDiscount(20)).toBe(0);
   });
 });
